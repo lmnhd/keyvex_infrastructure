@@ -7,6 +7,7 @@ import { StorageStack } from '../lib/storage-stack';
 import { ComputeStack } from '../lib/compute-stack';
 import { ApiStack } from '../lib/api-stack';
 import { MonitoringStack } from '../lib/monitoring-stack';
+import { UserBehaviorDynamoDBStack } from '../lib/user-behavior-dynamodb-stack';
 
 const app = new cdk.App();
 
@@ -71,6 +72,12 @@ const monitoringStack = new MonitoringStack(app, `${stackPrefix}-Monitoring`, {
   webSocketApi: apiStack.webSocketApi,
 });
 
+// User Behavior DynamoDB Stack (independent - creates its own table)
+const userBehaviorStack = new UserBehaviorDynamoDBStack(app, `${stackPrefix}-UserBehavior`, {
+  env,
+  description: `Keyvex User Behavior Tracking Stack - ${environment}`,
+});
+
 // Add stack dependencies
 databaseStack.addDependency(securityStack);
 computeStack.addDependency(databaseStack);
@@ -79,6 +86,7 @@ apiStack.addDependency(computeStack);
 monitoringStack.addDependency(databaseStack);
 monitoringStack.addDependency(computeStack);
 monitoringStack.addDependency(apiStack);
+userBehaviorStack.addDependency(databaseStack);
 // Storage stack is independent and can be deployed in parallel
 
 // Add tags to all stacks
@@ -104,10 +112,6 @@ new cdk.CfnOutput(databaseStack, 'TableName', {
   description: 'DynamoDB table name',
   exportName: `${stackPrefix}-TableName`,
 });
-
-
-
-
 
 new cdk.CfnOutput(storageStack, 'CloudFrontDomain', {
   value: storageStack.storage.distribution.distributionDomainName,
