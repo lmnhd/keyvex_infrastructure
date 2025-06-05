@@ -86,7 +86,7 @@ export class ComputeStack extends cdk.Stack {
     const aiProcessor = new lambda.Function(this, 'AiProcessor', {
       functionName: `keyvex-ai-processor-${environment}`,
       runtime: lambda.Runtime.NODEJS_18_X,
-      handler: 'index.handler',
+      handler: 'src/index.handler',
       code: getLambdaCode('ai-processor'),
       timeout: cdk.Duration.minutes(15),
       memorySize: 1024,
@@ -100,7 +100,7 @@ export class ComputeStack extends cdk.Stack {
     const analyticsProcessor = new lambda.Function(this, 'AnalyticsProcessor', {
       functionName: `keyvex-analytics-processor-${environment}`,
       runtime: lambda.Runtime.NODEJS_18_X,
-      handler: 'index.handler',
+      handler: 'src/index.handler',
       code: getLambdaCode('analytics-processor'),
       timeout: cdk.Duration.minutes(5),
       memorySize: 512,
@@ -114,7 +114,7 @@ export class ComputeStack extends cdk.Stack {
     const websocketHandler = new lambda.Function(this, 'WebsocketHandler', {
       functionName: `keyvex-websocket-handler-${environment}`,
       runtime: lambda.Runtime.NODEJS_18_X,
-      handler: 'index.handler',
+      handler: 'src/index.handler',
       code: getLambdaCode('websocket-handler'),
       timeout: cdk.Duration.seconds(30),
       memorySize: 256,
@@ -140,7 +140,7 @@ export class ComputeStack extends cdk.Stack {
     const emailProcessor = new lambda.Function(this, 'EmailProcessor', {
       functionName: `keyvex-email-processor-${environment}`,
       runtime: lambda.Runtime.NODEJS_18_X,
-      handler: 'index.handler',
+      handler: 'src/index.handler',
       code: getLambdaCode('email-processor'),
       timeout: cdk.Duration.minutes(2),
       memorySize: 256,
