@@ -24,22 +24,6 @@ export class UserBehaviorDynamoDBStack extends cdk.Stack {
         type: dynamodb.AttributeType.STRING
       },
 
-      // Global Secondary Index for querying by interaction type and time
-      globalSecondaryIndexes: [
-        {
-          indexName: 'GSI1',
-          partitionKey: {
-            name: 'GSI1PK',
-            type: dynamodb.AttributeType.STRING
-          },
-          sortKey: {
-            name: 'GSI1SK',
-            type: dynamodb.AttributeType.NUMBER
-          },
-          projectionType: dynamodb.ProjectionType.ALL
-        }
-      ],
-
       // Billing mode and capacity
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       
@@ -56,15 +40,27 @@ export class UserBehaviorDynamoDBStack extends cdk.Stack {
       deletionProtection: true,
 
       // Stream for real-time processing
-      stream: dynamodb.StreamViewType.NEW_AND_OLD_IMAGES,
-
-      // Tags for cost allocation
-      tags: {
-        Service: 'Keyvex',
-        Component: 'UserBehaviorTracking',
-        Environment: props?.env?.account?.includes('prod') ? 'Production' : 'Development'
-      }
+      stream: dynamodb.StreamViewType.NEW_AND_OLD_IMAGES
     });
+
+    // Add Global Secondary Index for querying by interaction type and time
+    this.behaviorTable.addGlobalSecondaryIndex({
+      indexName: 'GSI1',
+      partitionKey: {
+        name: 'GSI1PK',
+        type: dynamodb.AttributeType.STRING
+      },
+      sortKey: {
+        name: 'GSI1SK',
+        type: dynamodb.AttributeType.NUMBER
+      },
+      projectionType: dynamodb.ProjectionType.ALL
+    });
+
+    // Add tags to the table
+    cdk.Tags.of(this.behaviorTable).add('Service', 'Keyvex');
+    cdk.Tags.of(this.behaviorTable).add('Component', 'UserBehaviorTracking');
+    cdk.Tags.of(this.behaviorTable).add('Environment', props?.env?.account?.includes('prod') ? 'Production' : 'Development');
 
     // Create IAM role for Lambda functions accessing this table
     const behaviorTableAccessRole = new iam.Role(this, 'BehaviorTableAccessRole', {

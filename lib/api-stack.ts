@@ -52,19 +52,7 @@ export class ApiStack extends cdk.Stack {
       autoDeploy: true,
     });
 
-    // Grant WebSocket handler permissions to manage connections
-    lambdaFunctions.websocketHandler.addToRolePolicy(
-      new iam.PolicyStatement({
-        effect: iam.Effect.ALLOW,
-        actions: [
-          'execute-api:ManageConnections',
-          'execute-api:Invoke'
-        ],
-        resources: [
-          `arn:aws:execute-api:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:${this.webSocketApi.apiId}/*`
-        ],
-      })
-    );
+    // Note: WebSocket permissions will be granted in the compute stack to avoid circular dependencies
 
     // REST API Gateway (optional - for external integrations)
     this.apiGateway = new apigateway.RestApi(this, 'KeyvexRestApi', {

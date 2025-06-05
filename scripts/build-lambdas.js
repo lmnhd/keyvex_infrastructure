@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 const archiver = require('archiver');
+const readline = require('readline');
 
 const LAMBDA_DIR = path.join(__dirname, '..', 'lambda');
 const DIST_DIR = path.join(__dirname, '..', 'dist', 'lambda');
@@ -11,6 +12,21 @@ const LAMBDA_FUNCTIONS = [
   'websocket-handler',
   'email-processor'
 ];
+
+// Function to prompt user for confirmation
+function askUser(question) {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
+
+  return new Promise((resolve) => {
+    rl.question(question, (answer) => {
+      rl.close();
+      resolve(answer.toLowerCase().trim());
+    });
+  });
+}
 
 // Shared dependencies that all Lambda functions need
 const SHARED_DEPENDENCIES = {

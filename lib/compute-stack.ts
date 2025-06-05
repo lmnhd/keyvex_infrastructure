@@ -121,6 +121,21 @@ export class ComputeStack extends cdk.Stack {
       environment: commonEnvironment,
     });
 
+    // Grant broad WebSocket API management permissions to the WebSocket handler
+    // This avoids circular dependencies by not referencing the specific API
+    websocketHandler.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: [
+          'execute-api:ManageConnections',
+          'execute-api:Invoke'
+        ],
+        resources: [
+          `arn:aws:execute-api:${this.region}:${this.account}:*`
+        ],
+      })
+    );
+
     // Email Processor Lambda
     const emailProcessor = new lambda.Function(this, 'EmailProcessor', {
       functionName: `keyvex-email-processor-${environment}`,
