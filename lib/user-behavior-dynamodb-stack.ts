@@ -11,7 +11,7 @@ export class UserBehaviorDynamoDBStack extends cdk.Stack {
 
     // Main user behavior tracking table
     this.behaviorTable = new dynamodb.Table(this, 'UserBehaviorTable', {
-      tableName: 'user-behavior-tracking',
+      tableName: `keyvex-user-behavior-tracking-${props?.env?.account?.includes('prod') ? 'production' : 'development'}`,
       
       // Partition key: USER#userId
       // Sort key: INTERACTION#timestamp#interactionId OR PROFILE#CURRENT OR ANALYSIS#timestamp#analysisId
@@ -68,6 +68,7 @@ export class UserBehaviorDynamoDBStack extends cdk.Stack {
 
     // Create IAM role for Lambda functions accessing this table
     const behaviorTableAccessRole = new iam.Role(this, 'BehaviorTableAccessRole', {
+      roleName: `keyvex-behavior-table-access-role-${props?.env?.account?.includes('prod') ? 'production' : 'development'}`,
       assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
       managedPolicies: [
         iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole')

@@ -2,6 +2,7 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand, DeleteCommand, QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
 import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs';
+import { ApiGatewayManagementApiClient, PostToConnectionCommand } from '@aws-sdk/client-apigatewaymanagementapi';
 import { LambdaEnvironment, KeyvexTableItem, LambdaResponse } from './types';
 
 // Initialize AWS clients
@@ -354,4 +355,75 @@ export function validateEmail(email: string): boolean {
 // Initialize shared instances
 export const dynamoHelper = new DynamoDBHelper();
 export const secretsHelper = new SecretsHelper();
-export const sqsHelper = new SQSHelper(); 
+export const sqsHelper = new SQSHelper();
+
+// WebSocket helpers
+/**
+ * Emit step progress updates to WebSocket connections for a specific user
+ * This function can be called from any Lambda function in the V2 orchestration system
+ */
+export async function emitStepProgress(
+  userId: string,
+  jobId: string,
+  stepName: string,
+  status: 'pending' | 'running' | 'completed' | 'failed',
+  data?: any
+): Promise<void> {
+  const env = getEnvironment();
+  const webSocketDomain = process.env.WEBSOCKET_DOMAIN;
+  const webSocketStage = process.env.WEBSOCKET_STAGE;
+
+  if (!env.DYNAMODB_TABLE_NAME || !webSocketDomain || !webSocketStage) {
+    console.warn('WebSocket environment variables not configured, skipping progress emission');
+    return;
+  }
+
+  try {
+    const dynamoHelper = new DynamoDBHelper();
+    
+    // Find active connections for this user using GSI1
+    const connections = await dynamoHelper.queryGSI(
+      'GSI1',
+      `USER#${userId}`,
+      'CONNECTION#'
+    );
+
+    if (!connections || connections.length === 0) {
+      console.log(`No active WebSocket connections found for user ${userId}`);
+      return;
+    }
+
+    const callbackUrl = `https://${webSocketDomain}/${webSocketStage}`;
+    const apiGwClient = new ApiGatewayManagementApiClient({
+      endpoint: callbackUrl,
+    });
+
+    const progressMessage = {
+      type: 'step_progress',
+      jobId,
+      stepName,
+      status,
+      data,
+      timestamp: new Date().toISOString(),
+    };
+
+    // Send to all active connections for this user
+    const sendPromises = connections.map(async (connection: any) => {
+      try {
+        await apiGwClient.send(new PostToConnectionCommand({
+          ConnectionId: connection.connectionId,
+          Data: JSON.stringify(progressMessage),
+        }));
+        console.log(`Progress sent to connection ${connection.connectionId} for step: ${stepName}`);
+      } catch (error) {
+        console.error(`Failed to send to connection ${connection.connectionId}:`, error);
+        // Could add logic here to remove stale connections
+      }
+    });
+
+    await Promise.allSettled(sendPromises);
+    console.log(`Step progress emitted: ${stepName} - ${status} for user ${userId}`);
+  } catch (error) {
+    console.error('Error emitting step progress:', error);
+  }
+} 

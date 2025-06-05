@@ -3,6 +3,7 @@ import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import * as apigatewayv2 from '@aws-cdk/aws-apigatewayv2-alpha';
 import * as apigatewayv2Integrations from '@aws-cdk/aws-apigatewayv2-integrations-alpha';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as iam from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
 import { LambdaFunctions } from './compute-stack';
 
@@ -50,6 +51,20 @@ export class ApiStack extends cdk.Stack {
       stageName: environment === 'production' ? 'prod' : 'dev',
       autoDeploy: true,
     });
+
+    // Grant WebSocket handler permissions to manage connections
+    lambdaFunctions.websocketHandler.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: [
+          'execute-api:ManageConnections',
+          'execute-api:Invoke'
+        ],
+        resources: [
+          `arn:aws:execute-api:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:${this.webSocketApi.apiId}/*`
+        ],
+      })
+    );
 
     // REST API Gateway (optional - for external integrations)
     this.apiGateway = new apigateway.RestApi(this, 'KeyvexRestApi', {
