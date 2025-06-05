@@ -1,0 +1,32 @@
+{
+  "name": "validation-processor",
+  "version": "1.0.0",
+  "description": "AWS Lambda function for JavaScript/TypeScript code validation using Babel",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "node test/test-validation.js",
+    "deploy": "zip -r validation-processor.zip src/ package.json && aws lambda update-function-code --function-name validation-processor --zip-file fileb://validation-processor.zip"
+  },
+  "dependencies": {
+    "@babel/core": "^7.23.0",
+    "@babel/preset-env": "^7.23.0",
+    "@babel/preset-react": "^7.23.0",
+    "@babel/preset-typescript": "^7.23.0",
+    "@babel/plugin-syntax-jsx": "^7.23.0",
+    "@babel/plugin-transform-typescript": "^7.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  },
+  "keywords": [
+    "aws",
+    "lambda",
+    "babel",
+    "validation",
+    "javascript",
+    "typescript",
+    "react"
+  ],
+  "author": "Keyvex",
+  "license": "MIT"
+} 
